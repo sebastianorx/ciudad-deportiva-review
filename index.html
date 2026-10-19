@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ciudad Deportiva — Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --primary: #0a1a3a;
+    --accent: #00a3e0;
+    --gold: #c8a44e;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #e5e7eb;
+    --text: #1a1a2e;
+    --text-light: #6b7280;
+    --danger: #dc3545;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .topbar {
+    background: var(--primary);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-title {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: white;
+    letter-spacing: 1px;
+  }
+  .topbar-subtitle {
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    margin-top: 2px;
+  }
+  .topbar-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 24px 60px;
+    display: flex;
+    gap: 24px;
+  }
+
+  .viewer {
+    flex: 1;
+    min-width: 0;
+  }
+  .slide-container {
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--border);
+  }
+  .slide-img-wrap {
+    position: relative;
+    background: #000;
+  }
+  .slide-img-wrap img {
+    width: 100%;
+    display: block;
+  }
+  .slide-number-overlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(10,26,58,0.75);
+    color: white;
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+  }
+
+  .nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .nav-btn:hover { opacity: 0.85; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-info {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-light);
+  }
+
+  .thumbnails {
+    display: flex;
+    gap: 6px;
+    padding: 12px 20px;
+    overflow-x: auto;
+    border-top: 1px solid var(--border);
+    scrollbar-width: thin;
+  }
+  .thumb {
+    flex-shrink: 0;
+    width: 80px;
+    height: 45px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    opacity: 0.5;
+    transition: all 0.15s;
+  }
+  .thumb:hover { opacity: 0.8; }
+  .thumb.active {
+    border-color: var(--accent);
+    opacity: 1;
+  }
+  .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .panel {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .comment-card {
+    background: var(--card);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .comment-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .comment-header h3 {
+    font-family: 'Manrope', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--primary);
+  }
+  .comment-count {
+    font-size: 11px;
+    color: var(--text-light);
+    background: var(--bg);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+  }
+
+  .comment-form {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .form-row {
+    margin-bottom: 10px;
+  }
+  .form-row label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .form-row input,
+  .form-row textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    resize: vertical;
+  }
+  .form-row input:focus,
+  .form-row textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-row textarea {
+    min-height: 70px;
+  }
+  .submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .submit-btn:hover { opacity: 0.85; }
+  .submit-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .comments-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 0;
+  }
+  .comment-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .comment-author {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--primary);
+  }
+  .comment-time {
+    font-size: 10px;
+    color: var(--text-light);
+  }
+  .comment-slide-badge {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--accent);
+    background: rgba(0,163,224,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 6px;
+  }
+  .comment-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .no-comments {
+    padding: 30px 20px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 13px;
+  }
+
+  .tab-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .status-bar {
+    padding: 8px 20px;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-light);
+  }
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #16a34a;
+  }
+  .status-dot.offline { background: var(--danger); }
+
+  .kbd-hint {
+    font-size: 10px;
+    color: var(--text-light);
+    text-align: center;
+    padding: 8px;
+  }
+  kbd {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+  }
+
+  @media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .panel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">CIUDAD DEPORTIVA EDUCATIVA</div>
+    <div class="topbar-subtitle">Tierra de Gigantes — Review de presentacion</div>
+  </div>
+  <div class="topbar-badge">REVIEW v4</div>
+</div>
+
+<div class="main">
+  <div class="viewer">
+    <div class="slide-container">
+      <div class="slide-img-wrap">
+        <img id="slideImg" src="slides/slide-01.jpg" alt="Slide">
+        <div class="slide-number-overlay" id="slideLabel">01 / 17</div>
+      </div>
+      <div class="nav-bar">
+        <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)">Anterior</button>
+        <div class="nav-info" id="navInfo">Slide 1 de 17</div>
+        <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Siguiente</button>
+      </div>
+      <div class="thumbnails" id="thumbs"></div>
+      <div class="kbd-hint">Usa <kbd>&larr;</kbd> <kbd>&rarr;</kbd> para navegar</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="comment-card">
+      <div class="comment-header">
+        <h3>Comentarios</h3>
+        <span class="comment-count" id="commentCount">0</span>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Conectando...</span>
+      </div>
+
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabSlide" onclick="setTab('slide')">Esta slide</button>
+        <button class="tab-btn" id="tabAll" onclick="setTab('all')">Todos</button>
+      </div>
+
+      <form class="comment-form" id="commentForm" onsubmit="submitComment(event)">
+        <div class="form-row">
+          <label>Nombre</label>
+          <input type="text" id="authorInput" placeholder="Tu nombre" required>
+        </div>
+        <div class="form-row">
+          <label>Comentario</label>
+          <textarea id="commentInput" placeholder="Escribe tu comentario sobre esta slide..." required></textarea>
+        </div>
+        <button type="submit" class="submit-btn" id="submitBtn">Enviar comentario</button>
+      </form>
+
+      <div class="comments-list" id="commentsList">
+        <div class="no-comments">Cargando comentarios...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== CONFIG ==========
+// Para activar comentarios compartidos:
+// 1. Crea un proyecto gratis en https://supabase.com
+// 2. En SQL Editor, ejecuta:
+//
+// CREATE TABLE comments (
+//   id SERIAL PRIMARY KEY,
+//   slide INT NOT NULL,
+//   author TEXT NOT NULL,
+//   text TEXT NOT NULL,
+//   created_at TIMESTAMPTZ DEFAULT NOW()
+// );
+// ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+// CREATE POLICY "Allow all" ON comments FOR ALL USING (true) WITH CHECK (true);
+//
+// 3. Reemplaza estas dos variables con tus datos (Settings > API):
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
+// =============================
+
+const TOTAL_SLIDES = 17;
+let currentSlide = 1;
+let currentTab = 'slide';
+let allComments = [];
+let supabase_client = null;
+let isOnline = false;
+
+if (SUPABASE_URL && SUPABASE_KEY) {
+  supabase_client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  isOnline = true;
+}
+
+const savedAuthor = localStorage.getItem('review-author');
+if (savedAuthor) document.getElementById('authorInput').value = savedAuthor;
+
+function changeSlide(delta) { goToSlide(currentSlide + delta); }
+
+function goToSlide(n) {
+  if (n < 1 || n > TOTAL_SLIDES) return;
+  currentSlide = n;
+  const pad = String(n).padStart(2, '0');
+  document.getElementById('slideImg').src = 'slides/slide-' + pad + '.jpg';
+  document.getElementById('slideLabel').textContent = pad + ' / ' + TOTAL_SLIDES;
+  document.getElementById('navInfo').textContent = 'Slide ' + n + ' de ' + TOTAL_SLIDES;
+  document.getElementById('prevBtn').disabled = n === 1;
+  document.getElementById('nextBtn').disabled = n === TOTAL_SLIDES;
+  document.querySelectorAll('.thumb').forEach(function(t, i) {
+    t.classList.toggle('active', i + 1 === n);
+  });
+  var activeThumb = document.querySelector('.thumb.active');
+  if (activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  renderComments();
+}
+
+function buildThumbs() {
+  var container = document.getElementById('thumbs');
+  for (var i = 1; i <= TOTAL_SLIDES; i++) {
+    var pad = String(i).padStart(2, '0');
+    var div = document.createElement('div');
+    div.className = 'thumb' + (i === 1 ? ' active' : '');
+    div.innerHTML = '<img src="slides/slide-' + pad + '.jpg" alt="Slide ' + i + '">';
+    div.onclick = (function(n) { return function() { goToSlide(n); }; })(i);
+    container.appendChild(div);
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft') changeSlide(-1);
+  if (e.key === 'ArrowRight') changeSlide(1);
+});
+
+async function loadComments() {
+  if (supabase_client) {
+    try {
+      var resp = await supabase_client.from('comments').select('*').order('created_at', { ascending: false });
+      if (!resp.error) {
+        allComments = resp.data;
+        isOnline = true;
+      } else {
+        loadLocal();
+        isOnline = false;
+      }
+    } catch (e) {
+      loadLocal();
+      isOnline = false;
+    }
+  } else {
+    loadLocal();
+  }
+  updateStatus();
+  renderComments();
+}
+
+function loadLocal() {
+  allComments = JSON.parse(localStorage.getItem('review-comments') || '[]');
+}
+
+function saveLocal() {
+  localStorage.setItem('review-comments', JSON.stringify(allComments));
+}
+
+async function submitComment(e) {
+  e.preventDefault();
+  var author = document.getElementById('authorInput').value.trim();
+  var text = document.getElementById('commentInput').value.trim();
+  if (!author || !text) return;
+
+  localStorage.setItem('review-author', author);
+
+  var comment = {
+    slide: currentSlide,
+    author: author,
+    text: text,
+    created_at: new Date().toISOString()
+  };
+
+  document.getElementById('submitBtn').disabled = true;
+
+  if (supabase_client && isOnline) {
+    try {
+      var resp = await supabase_client.from('comments').insert([comment]).select();
+      if (!resp.error && resp.data) {
+        allComments.unshift(resp.data[0]);
+      } else {
+        allComments.unshift(comment);
+        saveLocal();
+      }
+    } catch (err) {
+      allComments.unshift(comment);
+      saveLocal();
+    }
+  } else {
+    allComments.unshift(comment);
+    saveLocal();
+  }
+
+  document.getElementById('commentInput').value = '';
+  document.getElementById('submitBtn').disabled = false;
+  renderComments();
+}
+
+function renderComments() {
+  var list = document.getElementById('commentsList');
+  var filtered = currentTab === 'slide'
+    ? allComments.filter(function(c) { return c.slide === currentSlide; })
+    : allComments;
+
+  document.getElementById('commentCount').textContent =
+    currentTab === 'slide'
+      ? filtered.length + ' en slide ' + currentSlide
+      : allComments.length + ' total';
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-comments">' +
+      (currentTab === 'slide'
+        ? 'No hay comentarios en esta slide. Se el primero.'
+        : 'No hay comentarios aun.') +
+      '</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(function(c) {
+    var date = new Date(c.created_at);
+    var timeStr = date.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+      + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+    var slideBadge = currentTab === 'all'
+      ? '<span class="comment-slide-badge">Slide ' + c.slide + '</span>'
+      : '';
+    return '<div class="comment-item">' +
+      '<div class="comment-meta">' +
+        '<span class="comment-author">' + escapeHtml(c.author) + slideBadge + '</span>' +
+        '<span class="comment-time">' + timeStr + '</span>' +
+      '</div>' +
+      '<div class="comment-text">' + escapeHtml(c.text) + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabSlide').classList.toggle('active', tab === 'slide');
+  document.getElementById('tabAll').classList.toggle('active', tab === 'all');
+  renderComments();
+}
+
+function updateStatus() {
+  var dot = document.getElementById('statusDot');
+  var text = document.getElementById('statusText');
+  if (supabase_client && isOnline) {
+    dot.classList.remove('offline');
+    text.textContent = 'Conectado — comentarios compartidos';
+  } else if (supabase_client && !isOnline) {
+    dot.classList.add('offline');
+    text.textContent = 'Sin conexion — guardando localmente';
+  } else {
+    dot.className = 'status-dot offline';
+    text.textContent = 'Modo local — configura Supabase para compartir';
+  }
+}
+
+function escapeHtml(str) {
+  var div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function subscribeRealtime() {
+  if (!supabase_client || !isOnline) return;
+  supabase_client
+    .channel('comments-channel')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, function(payload) {
+      var exists = allComments.some(function(c) { return c.id === payload.new.id; });
+      if (!exists) {
+        allComments.unshift(payload.new);
+        renderComments();
+      }
+    })
+    .subscribe();
+}
+
+buildThumbs();
+goToSlide(1);
+loadComments().then(function() { subscribeRealtime(); });
+</script>
+
+</body>
+</html>

@@ -362,14 +362,14 @@
     <div class="topbar-title">CIUDAD DEPORTIVA EDUCATIVA</div>
     <div class="topbar-subtitle">Tierra de Gigantes — Review de presentacion</div>
   </div>
-  <div class="topbar-badge">REVIEW v4</div>
+  <div class="topbar-badge">REVIEW v4 · ACTUALIZADO</div>
 </div>
 
 <div class="main">
   <div class="viewer">
     <div class="slide-container">
       <div class="slide-img-wrap">
-        <img id="slideImg" src="slides/slide-01.jpg" alt="Slide">
+        <img id="slideImg" src="slides/slide-01.jpg?v=20261022-v4" alt="Slide">
         <div class="slide-number-overlay" id="slideLabel">01 / 17</div>
       </div>
       <div class="nav-bar">
@@ -460,7 +460,7 @@ function goToSlide(n) {
   if (n < 1 || n > TOTAL_SLIDES) return;
   currentSlide = n;
   const pad = String(n).padStart(2, '0');
-  document.getElementById('slideImg').src = 'slides/slide-' + pad + '.jpg';
+  document.getElementById('slideImg').src = 'slides/slide-' + pad + '.jpg?v=20261022-v4';
   document.getElementById('slideLabel').textContent = pad + ' / ' + TOTAL_SLIDES;
   document.getElementById('navInfo').textContent = 'Slide ' + n + ' de ' + TOTAL_SLIDES;
   document.getElementById('prevBtn').disabled = n === 1;
